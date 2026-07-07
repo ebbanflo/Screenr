@@ -1,5 +1,7 @@
 # 🎬 Screenr
 
+### **[▶ Open Screenr](https://ebbanflo.github.io/Screenr/)** — write now, right in your browser
+
 A structured screenwriting app that runs entirely in your browser. Set up your characters and places once, then build your screenplay block by block — every dialogue cue, slug line, and transition is one tap away, so you spend your time on the ideas, not the formatting.
 
 **No accounts, no server, no build step.** Your work is stored locally in your browser (IndexedDB) and never leaves your device.
@@ -27,7 +29,7 @@ A structured screenwriting app that runs entirely in your browser. Set up your c
 
 It's a static site — no build, no dependencies.
 
-- **GitHub Pages:** enable Pages for this repo (Settings → Pages → *Deploy from a branch* → pick the branch, root folder `/`) and open the published URL.
+- **Live:** [ebbanflo.github.io/Screenr](https://ebbanflo.github.io/Screenr/) (deployed via GitHub Pages; every push redeploys automatically).
 - **Locally:** open `index.html` in a browser, or serve the folder with any static server (`python3 -m http.server`).
 
 ## A note on your data
