@@ -15,10 +15,11 @@ A structured screenwriting app that runs entirely in your browser. Set up your c
   - 💬 **Dialogue** — tap to pick the speaker (scene cast shown first), add V.O./O.S. extensions and parentheticals. New characters can be created inline without leaving the script. Toggle **dual dialogue** (⇄) to have two characters speak at once — printed side by side.
   - ⤳ **Transitions** — CUT TO:, FADE OUT., and friends as one-tap presets.
 - **Drag to reorder** — grab the ⠿ handle on any block to move it; ↑/↓ buttons work too.
-- **Page estimate** — a live rough page count in the header (one page ≈ one minute of screen time).
+- **Live page count** — an exact page count in the header, computed by the same layout engine that prints (one page ≈ one minute of screen time).
+- **A UI that looks like the page** — Courier everywhere, ink-on-paper white sheets, typewritten controls. The app reads like the document you're writing.
 - **Title page builder** — fill in title, credit, author, source, draft date, contact, and copyright; the printed title page lays it out in standard format.
 - **Smart flow** — press <kbd>Enter</kbd> to continue to the next logical block (scene → action, dialogue → dialogue with the speaker alternated for you). <kbd>Shift</kbd>+<kbd>Enter</kbd> for a line break, <kbd>Backspace</kbd> on an empty block to remove it.
-- **Print to industry standard** — the Print button produces US-standard screenplay output (Courier 12pt, US Letter, 1.5" left margin, standard element indents). Use your browser's "Save as PDF" to get a PDF.
+- **Print to industry standard** — the Print button produces US-standard screenplay output: Courier 12pt, US Letter, 1.5" left margin, standard element indents, and page numbers. Screenr paginates the script itself into exact 8.5×11" pages, so the browser adds no URL/date headers or footers — the output is print-house clean. Use your browser's "Save as PDF" to get a PDF.
 - **Export / import**
   - **Screenr backup (`.screenr.json`)** — full-fidelity backup; import it on any device to restore.
   - **Fountain (`.fountain`)** — export *and* import the open plain-text screenplay standard, readable by Final Draft, Highland, Fade In, and others. Importing a Fountain script rebuilds your character list, locations, and per-scene casts automatically.

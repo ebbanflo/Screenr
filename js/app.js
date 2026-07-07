@@ -163,25 +163,10 @@ function projectStats(p) {
   return { scenes, words, pages: estimatePages(p) };
 }
 
-/* Rough page estimate using standard element widths (~55 lines per page).
-   The industry rule of thumb — one page ≈ one minute of screen time. */
+/* Exact page count from the print layout engine —
+   one page ≈ one minute of screen time. */
 function estimatePages(p) {
-  const wrapLines = (text, width) =>
-    (text || '').split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / width)), 0);
-  let lines = 0;
-  for (const b of p.blocks) {
-    switch (b.type) {
-      case 'scene': lines += 3; break;
-      case 'action': if ((b.text || '').trim()) lines += wrapLines(b.text.trim(), 61) + 1; break;
-      case 'dialogue':
-        lines += 2 + wrapLines((b.text || '').trim(), 35)
-          + (b.parenthetical ? wrapLines(b.parenthetical.trim(), 25) : 0);
-        break;
-      case 'transition': if ((b.text || '').trim()) lines += 2; break;
-    }
-  }
-  if (!lines) return 0;
-  return Math.max(1, Math.round(lines / 55));
+  return paginateScript(p).length;
 }
 
 function updatePageEst() {
@@ -327,8 +312,8 @@ function renderTitleTab() {
   wrap.replaceChildren();
   for (const [key, label, kind, placeholder] of TITLE_FIELDS) {
     const field = kind === 'textarea'
-      ? el('textarea', { rows: 3, placeholder })
-      : el('input', { type: 'text', placeholder });
+      ? el('textarea', { rows: 3, placeholder, autocomplete: 'off', autocorrect: 'off' })
+      : el('input', { type: 'text', placeholder, autocomplete: 'off', autocorrect: 'off' });
     field.value = state.project.title[key] || '';
     field.addEventListener('input', () => {
       state.project.title[key] = field.value;
@@ -365,10 +350,10 @@ function renderCharacterList() {
     list.append(el('p', { class: 'hint' }, 'No characters yet. Add them here, or create them on the fly from any dialogue block.'));
   }
   for (const ch of state.project.characters) {
-    const nameInput = el('input', { type: 'text', class: 'char-name', value: ch.name, placeholder: 'NAME' });
+    const nameInput = el('input', { type: 'text', class: 'char-name', value: ch.name, placeholder: 'NAME', autocomplete: 'off', autocorrect: 'off', spellcheck: 'false' });
     nameInput.addEventListener('input', () => { ch.name = nameInput.value; markDirty(); });
     nameInput.addEventListener('blur', () => renderScript()); // refresh cues in the script
-    const descInput = el('input', { type: 'text', class: 'char-desc', value: ch.desc || '', placeholder: 'Who are they? (notes, never printed)' });
+    const descInput = el('input', { type: 'text', class: 'char-desc', value: ch.desc || '', placeholder: 'Who are they? (notes, never printed)', autocomplete: 'off' });
     descInput.addEventListener('input', () => { ch.desc = descInput.value; markDirty(); });
     const delBtn = el('button', { class: 'ghost danger', title: 'Remove character', onclick: () => {
       const used = state.project.blocks.some(b => b.type === 'dialogue' && b.characterId === ch.id);
@@ -392,7 +377,7 @@ function renderLocationList() {
     list.append(el('p', { class: 'hint' }, 'No locations yet. Every location you type into a scene heading is saved here automatically.'));
   }
   state.project.locations.forEach((loc, i) => {
-    const input = el('input', { type: 'text', value: loc, placeholder: 'LOCATION' });
+    const input = el('input', { type: 'text', value: loc, placeholder: 'LOCATION', autocomplete: 'off', autocorrect: 'off', spellcheck: 'false' });
     input.addEventListener('input', () => { state.project.locations[i] = input.value; markDirty(); });
     const delBtn = el('button', { class: 'ghost danger', title: 'Remove location', onclick: () => {
       state.project.locations.splice(i, 1);
@@ -664,7 +649,7 @@ function renderSceneBlock(block, sceneNo) {
   const locInput = el('input', {
     type: 'text', class: 'main-field slug-location', list: 'locations-datalist',
     placeholder: 'WHERE ARE WE? (e.g. SARAH’S KITCHEN)', value: block.location || '',
-    autocapitalize: 'characters', spellcheck: 'false',
+    autocapitalize: 'characters', spellcheck: 'false', autocomplete: 'off', autocorrect: 'off',
   });
   locInput.addEventListener('input', () => { block.location = locInput.value; markDirty(); updatePreview(); });
   locInput.addEventListener('change', () => rememberLocation(locInput.value));
@@ -673,7 +658,7 @@ function renderSceneBlock(block, sceneNo) {
 
   // time chips + custom
   const timeRow = el('div', { class: 'chip-row' });
-  const customTime = el('input', { type: 'text', class: 'chip-input', placeholder: 'custom…', spellcheck: 'false' });
+  const customTime = el('input', { type: 'text', class: 'chip-input', placeholder: 'custom…', spellcheck: 'false', autocomplete: 'off', autocorrect: 'off' });
   const drawTimes = () => {
     const isPreset = TIMES.includes(block.time);
     timeRow.replaceChildren(
@@ -754,7 +739,7 @@ function renderDialogueBlock(block) {
 
   const parenInput = el('input', {
     type: 'text', class: 'paren-input',
-    placeholder: '(beat)', value: block.parenthetical || '',
+    placeholder: '(beat)', value: block.parenthetical || '', autocomplete: 'off',
   });
   parenInput.hidden = !block.parenthetical;
   parenInput.addEventListener('input', () => { block.parenthetical = parenInput.value; markDirty(); });
@@ -844,7 +829,7 @@ function renderTransitionBlock(block) {
   const body = el('div', { class: 'block-body' });
   const input = el('input', {
     type: 'text', class: 'main-field transition-text', value: block.text || '',
-    placeholder: 'CUT TO:', spellcheck: 'false',
+    placeholder: 'CUT TO:', spellcheck: 'false', autocomplete: 'off', autocorrect: 'off', autocapitalize: 'characters',
   });
   input.addEventListener('input', () => { block.text = input.value.toUpperCase(); markDirty(); });
   input.addEventListener('keydown', e => mainFieldKeydown(e, block));
@@ -896,16 +881,135 @@ function closePopover() {
   document.removeEventListener('pointerdown', popoverOutside);
 }
 
-/* ---------------------------------- print ----------------------------------- */
+/* ---------------------------------- print -----------------------------------
+   Manual pagination: US Letter, Courier 12pt at 6 lines/inch and 10 chars/inch.
+   Content area is 6in wide (60 chars) by 9in tall (54 lines) inside 1.5in
+   left / 1in right/top/bottom margins. We wrap every element ourselves and
+   emit fixed 8.5x11in pages, so the browser adds no margins of its own —
+   which also suppresses its URL/date headers and footers entirely. */
 
-function printProject() {
-  const p = state.project;
-  const root = $('#print-root');
-  root.replaceChildren();
+const PP = {
+  width: 60, pageLines: 54,
+  cueIndent: 22, speechIndent: 10, speechWidth: 35, parenIndent: 16, parenWidth: 25,
+  dual: { colWidth: 28, gap: 4, cueIndent: 8, parenIndent: 4, parenWidth: 22 },
+};
 
-  // --- title page ---
-  const t = p.title;
-  const tp = el('div', { class: 'print-title-page' },
+function wrapText(text, width) {
+  const out = [];
+  for (const rawLine of String(text || '').split('\n')) {
+    let line = '';
+    for (const word of rawLine.split(/\s+/).filter(Boolean)) {
+      const cand = line ? line + ' ' + word : word;
+      if (cand.length <= width) { line = cand; continue; }
+      if (line) out.push(line);
+      let w = word;
+      while (w.length > width) { out.push(w.slice(0, width)); w = w.slice(width); }
+      line = w;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+function pLine(text, bold) { return { text, bold: !!bold }; }
+
+function cleanParen(s) {
+  let p = (s || '').trim();
+  if (!p) return '';
+  if (!p.startsWith('(')) p = '(' + p;
+  if (!p.endsWith(')')) p += ')';
+  return p;
+}
+
+function dialogueColumnLines(project, block, m) {
+  const ch = (project.characters || []).find(c => c.id === block.characterId) || null;
+  const cue = (ch ? ch.name : 'CHARACTER').toUpperCase() + (block.extension ? ` (${block.extension})` : '');
+  const lines = [' '.repeat(m.cueIndent) + cue];
+  const paren = cleanParen(block.parenthetical);
+  if (paren) for (const l of wrapText(paren, m.parenWidth)) lines.push(' '.repeat(m.parenIndent) + l);
+  for (const l of wrapText((block.text || '').trim(), m.speechWidth)) lines.push(' '.repeat(m.speechIndent) + l);
+  return lines;
+}
+
+/* Converts blocks into printable elements: { lines, keepTogether, keepWithNext } */
+function scriptElements(project) {
+  const els = [];
+  const blocks = project.blocks;
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+    switch (block.type) {
+      case 'scene': {
+        const loc = (block.location || '').toUpperCase();
+        const time = block.time ? ' - ' + block.time.toUpperCase() : '';
+        const slug = `${block.intExt ? block.intExt + ' ' : ''}${loc}${time}`.trim();
+        if (slug) els.push({ lines: wrapText(slug, PP.width).map(l => pLine(l, true)), keepWithNext: true });
+        break;
+      }
+      case 'action': {
+        if ((block.text || '').trim()) {
+          els.push({ lines: wrapText(block.text.trim(), PP.width).map(l => pLine(l)) });
+        }
+        break;
+      }
+      case 'dialogue': {
+        const next = blocks[i + 1];
+        if (next && next.type === 'dialogue' && next.dual) {
+          // dual dialogue: merge the two columns line by line
+          const d = PP.dual;
+          const colM = { cueIndent: d.cueIndent, parenIndent: d.parenIndent, parenWidth: d.parenWidth, speechIndent: 0, speechWidth: d.colWidth };
+          const left = dialogueColumnLines(project, block, colM);
+          const right = dialogueColumnLines(project, next, colM);
+          const lines = [];
+          for (let j = 0; j < Math.max(left.length, right.length); j++) {
+            lines.push(pLine((left[j] || '').padEnd(d.colWidth + d.gap) + (right[j] || '')));
+          }
+          els.push({ lines, keepTogether: true });
+          i++; // consumed the pair
+        } else {
+          const m = { cueIndent: PP.cueIndent, parenIndent: PP.parenIndent, parenWidth: PP.parenWidth, speechIndent: PP.speechIndent, speechWidth: PP.speechWidth };
+          els.push({ lines: dialogueColumnLines(project, block, m).map(l => pLine(l)), keepTogether: true });
+        }
+        break;
+      }
+      case 'transition': {
+        const txt = (block.text || '').trim().toUpperCase();
+        if (txt) els.push({ lines: [pLine(txt.length >= PP.width ? txt : txt.padStart(PP.width))] });
+        break;
+      }
+    }
+  }
+  return els;
+}
+
+/* Splits elements into pages of PP.pageLines lines. */
+function paginateScript(project) {
+  const pages = [];
+  let cur = [];
+  const breakPage = () => { pages.push(cur); cur = []; };
+
+  for (const elmt of scriptElements(project)) {
+    const blank = cur.length > 0 ? 1 : 0;
+    const remaining = PP.pageLines - cur.length;
+    const need = blank + elmt.lines.length + (elmt.keepWithNext ? 3 : 0);
+    // move whole element to a fresh page when it should stay together and can
+    if (need > remaining && (elmt.keepTogether || elmt.keepWithNext) && elmt.lines.length + 3 <= PP.pageLines) {
+      breakPage();
+    } else if (blank && remaining <= 1) {
+      breakPage();
+    }
+    if (cur.length > 0) cur.push(pLine(''));
+    for (const l of elmt.lines) {
+      if (cur.length >= PP.pageLines) breakPage();
+      if (cur.length === 0 && l.text === '') continue; // no blank leading a page
+      cur.push(l);
+    }
+  }
+  if (cur.length) pages.push(cur);
+  return pages;
+}
+
+function buildTitlePage(t) {
+  return el('div', { class: 'print-page print-title' },
     el('div', { class: 'ptp-center' },
       el('div', { class: 'ptp-title' }, (t.title || 'UNTITLED').toUpperCase()),
       t.credit ? el('div', { class: 'ptp-credit' }, t.credit) : null,
@@ -916,54 +1020,26 @@ function printProject() {
         ...(t.contact ? t.contact.split('\n').map(l => el('div', {}, l)) : []),
         t.copyright ? el('div', {}, t.copyright) : null),
       el('div', { class: 'ptp-draft' }, t.draftDate || '')));
-  root.append(tp);
+}
 
-  // --- script pages ---
-  const script = el('div', { class: 'print-script' });
-  for (const block of p.blocks) {
-    switch (block.type) {
-      case 'scene': {
-        const loc = (block.location || '').toUpperCase();
-        const time = block.time ? ' - ' + block.time.toUpperCase() : '';
-        script.append(el('div', { class: 'p-scene' }, `${block.intExt ? block.intExt + ' ' : ''}${loc}${time}`.trim()));
-        break;
-      }
-      case 'action': {
-        if ((block.text || '').trim()) {
-          for (const para of block.text.trim().split(/\n{2,}/)) {
-            script.append(el('div', { class: 'p-action' }, para));
-          }
-        }
-        break;
-      }
-      case 'dialogue': {
-        const ch = characterById(block.characterId);
-        const cue = (ch ? ch.name : 'CHARACTER').toUpperCase() + (block.extension ? ` (${block.extension})` : '');
-        const group = el('div', { class: 'p-dialogue-group' }, el('div', { class: 'p-character' }, cue));
-        if ((block.parenthetical || '').trim()) {
-          let paren = block.parenthetical.trim();
-          if (!paren.startsWith('(')) paren = '(' + paren;
-          if (!paren.endsWith(')')) paren += ')';
-          group.append(el('div', { class: 'p-paren' }, paren));
-        }
-        group.append(el('div', { class: 'p-speech' }, (block.text || '').trim()));
-        const last = script.lastElementChild;
-        if (block.dual && last && last.classList.contains('p-dialogue-group')) {
-          const row = el('div', { class: 'p-dual-row' });
-          script.replaceChild(row, last);
-          row.append(last, group);
-        } else {
-          script.append(group);
-        }
-        break;
-      }
-      case 'transition': {
-        if ((block.text || '').trim()) script.append(el('div', { class: 'p-transition' }, block.text.trim().toUpperCase()));
-        break;
-      }
-    }
-  }
-  root.append(script);
+function printProject() {
+  const p = state.project;
+  const root = $('#print-root');
+  root.replaceChildren();
+
+  root.append(buildTitlePage(p.title));
+
+  paginateScript(p).forEach((pageLines, idx) => {
+    const pre = el('pre', { class: 'print-body' });
+    pageLines.forEach((l, j) => {
+      pre.append(l.bold ? el('b', {}, l.text) : l.text);
+      if (j < pageLines.length - 1) pre.append('\n');
+    });
+    const page = el('div', { class: 'print-page' }, pre);
+    if (idx > 0) page.append(el('div', { class: 'page-num' }, (idx + 1) + '.'));
+    root.append(page);
+  });
+
   window.print();
 }
 
@@ -998,8 +1074,8 @@ function wireChrome() {
 
   $('#char-add-form').addEventListener('submit', e => {
     e.preventDefault();
-    const nameInput = $('#char-add-name');
-    const descInput = $('#char-add-desc');
+    const nameInput = $('#char-add-cue');
+    const descInput = $('#char-add-notes');
     if (addCharacter(nameInput.value, descInput.value.trim())) {
       nameInput.value = '';
       descInput.value = '';
@@ -1009,7 +1085,7 @@ function wireChrome() {
 
   $('#loc-add-form').addEventListener('submit', e => {
     e.preventDefault();
-    const input = $('#loc-add-name');
+    const input = $('#loc-add-field');
     rememberLocation(input.value);
     markDirty();
     input.value = '';

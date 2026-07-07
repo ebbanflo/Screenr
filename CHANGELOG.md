@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-07-07
+
+### Changed
+
+- **Complete UI redesign — the app now looks like the page itself.** Courier for every UI element, white paper sheets on a pale desk, typewritten uppercase controls, black-ink active states, hairline rules, red-pencil danger accents. Emoji removed from the chrome.
+- **Print engine rewritten with true pagination.** Screenr now lays out exact 8.5×11" pages itself (Courier 12pt, 6 lines/inch, 60-char lines, standard element indents) and prints with zero browser page margin — eliminating the URL/date headers and footers browsers add. Scene headings keep with their following block, dialogue never splits across pages, and pages get standard top-right numbers from page 2.
+- The header page count is now exact — computed by the same pagination engine that prints — instead of a rough estimate.
+
+### Fixed
+
+- Mobile keyboards no longer offer contact/name autofill or fight autocorrect in structural fields: autofill is disabled across the app, autocorrect is off for locations, character names, transitions, and times (prose fields keep it), and the name-hinting input ids that triggered iOS contact heuristics were renamed.
+- Elements hidden with the `hidden` attribute could still show when they carried a `display` style of their own (the editor's Export/Print buttons appeared on the library screen); a global guard now enforces it.
+
 ## [2.1.0] - 2026-07-07
 
 ### Added
@@ -45,7 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Print output in US industry-standard screenplay format (Courier 12pt, US Letter, standard margins and element indents) including a formatted title page.
 - Dark, writer-focused UI with a light "page" for the script; responsive down to phone widths.
 
-[Unreleased]: https://github.com/ebbanflo/Screenr/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/ebbanflo/Screenr/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/ebbanflo/Screenr/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/ebbanflo/Screenr/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/ebbanflo/Screenr/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/ebbanflo/Screenr/releases/tag/v1.0.0

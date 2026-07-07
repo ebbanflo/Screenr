@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#fffdf9">
   <meta name="description" content="Screenr — a structured screenwriting app. Set up characters and places once, then build your screenplay block by block.">
   <title>Screenr — structured screenwriting</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
@@ -14,7 +15,7 @@
   <header id="app-header">
     <div class="header-left">
       <button id="btn-back" class="ghost" title="Back to library" hidden>←</button>
-      <span class="logo">🎬 Screenr</span>
+      <span class="logo">Screenr.</span>
       <span id="header-title"></span>
     </div>
     <div class="header-right" id="editor-actions" hidden>
@@ -59,9 +60,9 @@
         <div class="panel-card">
           <h2>Characters</h2>
           <p class="hint">Set your cast here once — then any dialogue block is one tap away from the right name. You can also add characters on the fly while writing.</p>
-          <form id="char-add-form" class="setup-row">
-            <input id="char-add-name" type="text" class="char-name" placeholder="NAME" autocapitalize="characters">
-            <input id="char-add-desc" type="text" class="char-desc" placeholder="Who are they? (notes, never printed)">
+          <form id="char-add-form" class="setup-row" autocomplete="off">
+            <input id="char-add-cue" type="text" class="char-name" placeholder="NAME" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false">
+            <input id="char-add-notes" type="text" class="char-desc" placeholder="Who are they? (notes, never printed)" autocomplete="off">
             <button type="submit" class="primary">Add</button>
           </form>
           <div id="char-list"></div>
@@ -69,8 +70,8 @@
         <div class="panel-card">
           <h2>Places</h2>
           <p class="hint">Locations for your scene headings. Anything you type into a slug line is remembered here automatically.</p>
-          <form id="loc-add-form" class="setup-row">
-            <input id="loc-add-name" type="text" placeholder="LOCATION (e.g. SARAH’S KITCHEN)" autocapitalize="characters">
+          <form id="loc-add-form" class="setup-row" autocomplete="off">
+            <input id="loc-add-field" type="text" placeholder="LOCATION (e.g. SARAH’S KITCHEN)" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false">
             <button type="submit" class="primary">Add</button>
           </form>
           <div id="loc-list"></div>
@@ -88,10 +89,10 @@
         </div>
         <div id="block-toolbar">
           <span class="toolbar-label">Add:</span>
-          <button data-add="scene" title="Scene heading — INT./EXT., location, time">🎬 Scene</button>
-          <button data-add="action" title="Action — what we see on screen">✏️ Action</button>
-          <button data-add="dialogue" title="Dialogue — pick who speaks, then write the line">💬 Dialogue</button>
-          <button data-add="transition" title="Transition — CUT TO:, FADE OUT., …">⤳ Transition</button>
+          <button data-add="scene" title="Scene heading — INT./EXT., location, time">Scene</button>
+          <button data-add="action" title="Action — what we see on screen">Action</button>
+          <button data-add="dialogue" title="Dialogue — pick who speaks, then write the line">Dialogue</button>
+          <button data-add="transition" title="Transition — CUT TO:, FADE OUT., …">Transition</button>
         </div>
       </div>
     </section>
