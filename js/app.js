@@ -96,6 +96,7 @@ function normalizeProject(p) {
 function markDirty() {
   if (!state.project) return;
   setSaveStatus('Saving…');
+  updatePageEst();
   clearTimeout(state.saveTimer);
   state.saveTimer = setTimeout(saveNow, 500);
 }
@@ -140,6 +141,7 @@ function openProject(project) {
   $('#btn-back').hidden = false;
   setSaveStatus('Saved');
   updateHeaderTitle();
+  updatePageEst();
   setTab('script');
   renderTitleTab();
   renderSetupTab();
@@ -158,7 +160,34 @@ function projectStats(p) {
     const text = [b.text, b.parenthetical].filter(Boolean).join(' ');
     return n + (text.trim() ? text.trim().split(/\s+/).length : 0);
   }, 0);
-  return { scenes, words };
+  return { scenes, words, pages: estimatePages(p) };
+}
+
+/* Rough page estimate using standard element widths (~55 lines per page).
+   The industry rule of thumb — one page ≈ one minute of screen time. */
+function estimatePages(p) {
+  const wrapLines = (text, width) =>
+    (text || '').split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / width)), 0);
+  let lines = 0;
+  for (const b of p.blocks) {
+    switch (b.type) {
+      case 'scene': lines += 3; break;
+      case 'action': if ((b.text || '').trim()) lines += wrapLines(b.text.trim(), 61) + 1; break;
+      case 'dialogue':
+        lines += 2 + wrapLines((b.text || '').trim(), 35)
+          + (b.parenthetical ? wrapLines(b.parenthetical.trim(), 25) : 0);
+        break;
+      case 'transition': if ((b.text || '').trim()) lines += 2; break;
+    }
+  }
+  if (!lines) return 0;
+  return Math.max(1, Math.round(lines / 55));
+}
+
+function updatePageEst() {
+  if (!state.project) return;
+  const pages = estimatePages(state.project);
+  $('#page-est').textContent = pages ? `≈ ${pages} page${pages === 1 ? '' : 's'}` : '';
 }
 
 function renderLibrary() {
@@ -171,12 +200,12 @@ function renderLibrary() {
     return;
   }
   for (const p of state.projects) {
-    const { scenes, words } = projectStats(p);
+    const { scenes, words, pages } = projectStats(p);
     const card = el('div', { class: 'project-card', role: 'button', tabindex: '0' },
       el('div', { class: 'project-card-main' },
         el('h2', {}, p.title.title || 'Untitled screenplay'),
         el('p', { class: 'byline' }, p.title.author ? `by ${p.title.author}` : ''),
-        el('p', { class: 'meta' }, `${scenes} scene${scenes === 1 ? '' : 's'} · ${words} words · updated ${fmtDate(p.updatedAt)}`)),
+        el('p', { class: 'meta' }, `${scenes} scene${scenes === 1 ? '' : 's'} · ~${pages} page${pages === 1 ? '' : 's'} · ${words} words · updated ${fmtDate(p.updatedAt)}`)),
       el('div', { class: 'project-card-actions' },
         el('button', { class: 'ghost', title: 'Duplicate', onclick: e => { e.stopPropagation(); duplicateProject(p); } }, '⧉'),
         el('button', { class: 'ghost', title: 'Export backup (.json)', onclick: e => { e.stopPropagation(); exportJSON(p); } }, '⇩'),
@@ -221,11 +250,19 @@ function exportFountain(p) {
 }
 
 async function importFile(file) {
+  const text = await file.text();
+
+  if (/\.(fountain|txt)$/i.test(file.name)) {
+    importFountainText(text, file.name);
+    return;
+  }
+
   let data;
   try {
-    data = JSON.parse(await file.text());
+    data = JSON.parse(text);
   } catch {
-    alert('That file is not valid JSON. Screenr imports .screenr.json backup files.');
+    // Not JSON — maybe a Fountain file with an odd extension.
+    importFountainText(text, file.name);
     return;
   }
   let projects = [];
@@ -245,6 +282,21 @@ async function importFile(file) {
     await ScreenrDB.put(p);
   }
   alert(`Imported ${projects.length} screenplay${projects.length === 1 ? '' : 's'}.`);
+  showLibrary();
+}
+
+async function importFountainText(text, filename) {
+  const parsed = ScreenrFountain.fromFountain(text);
+  if (!parsed.blocks.length && !parsed.title.title) {
+    alert('Could not find a screenplay in that file. Screenr imports .screenr.json backups and .fountain scripts.');
+    return;
+  }
+  const p = normalizeProject(parsed);
+  if (!p.title.title) {
+    p.title.title = (filename || 'Imported').replace(/\.(fountain|txt)$/i, '').replace(/[-_]+/g, ' ');
+  }
+  await ScreenrDB.put(p);
+  alert(`Imported “${p.title.title}” from Fountain.`);
   showLibrary();
 }
 
@@ -373,7 +425,7 @@ function newBlock(type) {
   switch (type) {
     case 'scene': return { id: uid(), type, intExt: 'INT.', location: '', time: 'DAY', cast: [] };
     case 'action': return { id: uid(), type, text: '' };
-    case 'dialogue': return { id: uid(), type, characterId: null, extension: '', parenthetical: '', text: '' };
+    case 'dialogue': return { id: uid(), type, characterId: null, extension: '', parenthetical: '', text: '', dual: false };
     case 'transition': return { id: uid(), type, text: 'CUT TO:' };
   }
 }
@@ -497,8 +549,66 @@ function renderScript() {
   refreshLocationDatalist();
 }
 
-function blockTools(block) {
+/* Pointer-based drag to reorder (works with mouse and touch,
+   unlike HTML5 drag-and-drop). */
+
+function clearDropMarkers() {
+  $$('#blocks .drop-before, #blocks .drop-after').forEach(b => b.classList.remove('drop-before', 'drop-after'));
+}
+
+function startBlockDrag(blockId, wrap, downEvent) {
+  downEvent.preventDefault();
+  wrap.classList.add('dragging');
+
+  // auto-scroll while dragging near the viewport edges
+  let scrollDir = 0, active = true;
+  (function scrollLoop() {
+    if (!active) return;
+    if (scrollDir) window.scrollBy(0, scrollDir);
+    requestAnimationFrame(scrollLoop);
+  })();
+
+  const onMove = ev => {
+    ev.preventDefault();
+    const edge = 80;
+    scrollDir = ev.clientY < edge ? -14 : ev.clientY > window.innerHeight - edge ? 14 : 0;
+    clearDropMarkers();
+    const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    const target = under && under.closest('#blocks .block');
+    if (!target || target.dataset.blockId === blockId) return;
+    const r = target.getBoundingClientRect();
+    target.classList.add(ev.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+  };
+
+  const onUp = ev => {
+    active = false;
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onUp);
+    wrap.classList.remove('dragging');
+    const isBefore = !!$('#blocks .drop-before');
+    const marker = $('#blocks .drop-before') || $('#blocks .drop-after');
+    clearDropMarkers();
+    if (!marker || ev.type === 'pointercancel') return;
+    const blocks = state.project.blocks;
+    const [moved] = blocks.splice(blockIndex(blockId), 1);
+    const to = blockIndex(marker.dataset.blockId);
+    blocks.splice(isBefore ? to : to + 1, 0, moved);
+    markDirty();
+    renderScript();
+  };
+
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onUp);
+}
+
+function blockTools(block, wrap) {
+  const handle = el('span', { class: 'drag-handle', title: 'Drag to reorder' }, '⠿');
+  handle.addEventListener('pointerdown', e => startBlockDrag(block.id, wrap, e));
+
   return el('div', { class: 'block-tools' },
+    handle,
     el('span', { class: 'block-type-label' }, block.type),
     el('button', { class: 'ghost', title: 'Move up', onclick: () => moveBlock(block.id, -1) }, '↑'),
     el('button', { class: 'ghost', title: 'Move down', onclick: () => moveBlock(block.id, 1) }, '↓'),
@@ -509,9 +619,9 @@ function blockTools(block) {
 }
 
 function renderBlockEl(block, sceneNo) {
-  const wrap = el('div', { class: `block block-${block.type}`, dataset: { blockId: block.id } });
+  const wrap = el('div', { class: `block block-${block.type}${block.dual ? ' dual' : ''}`, dataset: { blockId: block.id } });
   wrap.addEventListener('focusin', () => { state.focusBlockId = block.id; });
-  wrap.append(blockTools(block));
+  wrap.append(blockTools(block, wrap));
 
   if (block.type === 'scene') wrap.append(renderSceneBlock(block, sceneNo));
   else if (block.type === 'action') wrap.append(renderActionBlock(block));
@@ -536,7 +646,8 @@ function renderSceneBlock(block, sceneNo) {
   const preview = el('div', { class: 'slug-preview' });
   const updatePreview = () => {
     const loc = (block.location || 'LOCATION').toUpperCase();
-    preview.textContent = `${sceneNo}. ${block.intExt} ${loc}${block.time ? ' - ' + block.time.toUpperCase() : ''}`;
+    const slug = `${block.intExt ? block.intExt + ' ' : ''}${loc}${block.time ? ' - ' + block.time.toUpperCase() : ''}`;
+    preview.textContent = `${sceneNo}. ${slug}`;
   };
   updatePreview();
 
@@ -655,7 +766,25 @@ function renderDialogueBlock(block) {
     else { block.parenthetical = ''; parenInput.value = ''; markDirty(); }
   });
 
-  cueRow.append(charBtn, extSel, parenBtn);
+  const dualBtn = el('button', {
+    class: 'ghost dual-toggle' + (block.dual ? ' active' : ''), type: 'button',
+    title: 'Dual dialogue — spoken at the same time as the dialogue block above',
+  }, '⇄');
+  dualBtn.addEventListener('click', () => {
+    if (!block.dual) {
+      const prev = state.project.blocks[blockIndex(block.id) - 1];
+      if (!prev || prev.type !== 'dialogue') {
+        alert('Dual dialogue pairs with a dialogue block directly above it — move this block below the line it overlaps with.');
+        return;
+      }
+    }
+    block.dual = !block.dual;
+    markDirty();
+    renderScript();
+  });
+
+  cueRow.append(charBtn, extSel, parenBtn, dualBtn);
+  if (block.dual) cueRow.append(el('span', { class: 'dual-tag' }, '⇄ with above'));
 
   const ta = el('textarea', { class: 'main-field dialogue-text', rows: 1, placeholder: 'What do they say?' });
   ta.value = block.text || '';
@@ -790,7 +919,7 @@ function printProject() {
       case 'scene': {
         const loc = (block.location || '').toUpperCase();
         const time = block.time ? ' - ' + block.time.toUpperCase() : '';
-        script.append(el('div', { class: 'p-scene' }, `${block.intExt} ${loc}${time}`.trim()));
+        script.append(el('div', { class: 'p-scene' }, `${block.intExt ? block.intExt + ' ' : ''}${loc}${time}`.trim()));
         break;
       }
       case 'action': {
@@ -812,7 +941,14 @@ function printProject() {
           group.append(el('div', { class: 'p-paren' }, paren));
         }
         group.append(el('div', { class: 'p-speech' }, (block.text || '').trim()));
-        script.append(group);
+        const last = script.lastElementChild;
+        if (block.dual && last && last.classList.contains('p-dialogue-group')) {
+          const row = el('div', { class: 'p-dual-row' });
+          script.replaceChild(row, last);
+          row.append(last, group);
+        } else {
+          script.append(group);
+        }
         break;
       }
       case 'transition': {

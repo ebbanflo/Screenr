@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-07
+
+### Added
+
+- Fountain (`.fountain` / `.txt`) import: parses the title page, scene headings, dialogue (including extensions, parentheticals, and dual-dialogue `^` marks), transitions, and action; rebuilds the character list, saved locations, and per-scene casts automatically. Files that fail JSON parsing fall back to the Fountain parser.
+- Dual dialogue: a ⇄ toggle on dialogue blocks pairs a line with the dialogue block above it; printed side by side in two columns and exported to Fountain with the `^` mark.
+- Drag-to-reorder: a ⠿ handle on every block for dragging it anywhere in the script, with a drop-position indicator.
+- Live page estimate in the editor header and `~pages` on library cards, based on standard element line widths (~55 lines per page).
+
 ## [1.0.0] - 2026-07-07
 
 ### Added
@@ -24,5 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Print output in US industry-standard screenplay format (Courier 12pt, US Letter, standard margins and element indents) including a formatted title page.
 - Dark, writer-focused UI with a light "page" for the script; responsive down to phone widths.
 
-[Unreleased]: https://github.com/ebbanflo/Screenr/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ebbanflo/Screenr/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/ebbanflo/Screenr/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/ebbanflo/Screenr/releases/tag/v1.0.0

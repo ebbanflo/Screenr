@@ -97,7 +97,8 @@ textarea { resize: none; }
   white-space: nowrap;
 }
 .header-right { display: flex; align-items: center; gap: 10px; }
-#save-status { color: var(--text-dim); font-size: 13px; }
+#save-status, #page-est { color: var(--text-dim); font-size: 13px; }
+#page-est { border-right: 1px solid var(--border); padding-right: 10px; }
 
 main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
 
@@ -245,6 +246,20 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
   margin-right: 4px;
 }
 
+/* drag to reorder */
+.drag-handle {
+  cursor: grab;
+  color: var(--page-dim);
+  padding: 2px 6px;
+  user-select: none;
+  touch-action: none; /* pointer-drag instead of scroll when grabbing on touch */
+}
+.drag-handle:hover { color: var(--page-ink); }
+.drag-handle:active { cursor: grabbing; }
+.block.dragging { opacity: 0.35; }
+.block.drop-before { box-shadow: 0 -3px 0 var(--accent); }
+.block.drop-after { box-shadow: 0 3px 0 var(--accent); }
+
 .block-body { display: grid; gap: 8px; }
 
 /* fields on the light page */
@@ -312,6 +327,18 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
 .char-btn:hover { border-color: var(--accent); }
 .ext-select { padding: 4px 6px; font-size: 13px; }
 .paren-toggle { color: var(--page-dim); }
+.dual-toggle { color: var(--page-dim); }
+.dual-toggle.active {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.dual-tag { font-size: 12px; color: var(--page-dim); }
+.block-dialogue.dual .dialogue-body {
+  border-left: 2px dashed var(--accent);
+  padding-left: 12px;
+  margin-top: -6px;
+}
 .paren-input { font-family: var(--courier); font-style: italic; max-width: 300px; margin: 0 auto; width: 100%; }
 .dialogue-text { text-align: left; }
 
@@ -480,4 +507,20 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
     text-transform: uppercase;
     page-break-after: avoid;
   }
+
+  /* dual dialogue: two side-by-side columns */
+  .p-dual-row {
+    display: flex;
+    gap: 0.4in;
+    page-break-inside: avoid;
+    margin: 0 0 12pt;
+  }
+  .p-dual-row .p-dialogue-group {
+    flex: 1;
+    margin: 0;
+    min-width: 0;
+  }
+  .p-dual-row .p-character { margin-left: 0.8in; }
+  .p-dual-row .p-paren { margin-left: 0.4in; max-width: 2in; }
+  .p-dual-row .p-speech { margin-left: 0; max-width: 2.8in; }
 }

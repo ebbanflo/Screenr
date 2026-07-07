@@ -18,6 +18,7 @@
       <span id="header-title"></span>
     </div>
     <div class="header-right" id="editor-actions" hidden>
+      <span id="page-est" title="Rough page count — about one minute of screen time per page"></span>
       <span id="save-status" aria-live="polite"></span>
       <button id="btn-export" class="ghost">Export ▾</button>
       <button id="btn-print" class="primary">Print</button>
@@ -30,7 +31,7 @@
       <div class="library-head">
         <h1>Your screenplays</h1>
         <div class="library-actions">
-          <button id="btn-import" class="ghost">Import backup</button>
+          <button id="btn-import" class="ghost" title="Import a .screenr.json backup or a .fountain script">Import</button>
           <button id="btn-new" class="primary">+ New screenplay</button>
         </div>
       </div>
@@ -97,7 +98,7 @@
   </main>
 
   <datalist id="locations-datalist"></datalist>
-  <input type="file" id="file-input" accept=".json,application/json" hidden>
+  <input type="file" id="file-input" accept=".json,.fountain,.txt,application/json,text/plain" hidden>
   <div id="popover" hidden></div>
   <div id="print-root" aria-hidden="true"></div>
 
