@@ -403,14 +403,83 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
 .popover-desc { color: var(--text-dim); font-size: 13px; }
 .popover-new { color: var(--accent); }
 
-/* ------------------------------ responsive ---------------------------- */
+/* ------------------------------ responsive ----------------------------
+   The app auto-detects the viewing context: below 700px it switches to a
+   phone layout (bottom-sheet pickers, full-width toolbar, stacked rows),
+   and on any touch device it enlarges tap targets and keeps block tools
+   visible instead of hover-only. */
 
-@media (max-width: 640px) {
-  #page { padding: 24px 14px; border-radius: 8px; }
-  .block-tools { display: flex; position: static; justify-content: flex-end; background: transparent; }
+@media (max-width: 700px) {
+  main { padding: 12px 8px 150px; }
+
+  #app-header { padding: 8px 10px; gap: 8px; }
+  #app-header button { padding: 6px 10px; white-space: nowrap; }
+  #save-status { display: none; } /* autosave just works; reclaim the space */
+  #page-est { border-right: none; padding-right: 0; white-space: nowrap; }
+
+  #tabs { overflow-x: auto; scrollbar-width: none; }
+  #tabs button { padding: 10px; white-space: nowrap; }
+
+  #page { padding: 20px 12px; border-radius: 8px; }
+  .panel-card { padding: 14px; }
+
+  /* 16px inputs stop iOS Safari from zooming the page on focus */
+  input, textarea, select, .main-field { font-size: 16px; }
+
+  .block { padding-left: 8px; }
+  .block-tools {
+    display: flex;
+    position: static;
+    justify-content: flex-end;
+    background: transparent;
+    margin-bottom: 2px;
+  }
   .block-type-label { margin-right: auto; }
   .dialogue-body { max-width: none; }
+  .paren-input { max-width: none; }
+
+  .setup-row { flex-wrap: wrap; }
+  .setup-row .char-name { flex: 1 1 40%; }
+  .setup-row .char-desc { flex: 1 1 100%; order: 3; }
+
   .library-head h1 { font-size: 20px; }
+  .project-card { flex-direction: column; align-items: stretch; }
+  .project-card-actions { justify-content: flex-end; }
+
+  #block-toolbar {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    transform: none;
+    justify-content: space-between;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+  .toolbar-label { display: none; }
+
+  /* popovers (character picker, export menu) become bottom sheets */
+  #popover.sheet {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-width: none;
+    max-height: 55vh;
+    border-radius: 16px 16px 0 0;
+    border-bottom: none;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+  }
+  #popover.sheet .popover-item { padding: 13px 12px; }
+}
+
+/* touch devices of any size: bigger tap targets, tools always visible */
+@media (pointer: coarse) {
+  .block-tools { display: flex; }
+  .chip, .chip-input { padding: 7px 13px; }
+  .block-tools .ghost, .drag-handle { padding: 6px 10px; }
+  .popover-item { padding: 12px 10px; }
 }
 
 /* ============================================================

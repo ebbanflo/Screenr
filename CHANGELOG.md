@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-07-07
+
+### Added
+
+- Responsive phone layout: the app auto-detects the viewport and switches below 700px — full-width bottom toolbar with safe-area padding, character picker and export menu presented as bottom sheets, stacked library cards and setup rows, and a compact header.
+- Touch-device detection (`pointer: coarse`): block tools are always visible instead of hover-only, and chips/buttons get larger tap targets on any touch screen regardless of size.
+
+### Fixed
+
+- Inputs use 16px font on small screens so iOS Safari no longer zooms the page when a field is focused.
+- Header buttons no longer wrap their labels on narrow screens.
+
 ## [2.0.0] - 2026-07-07
 
 ### Added
@@ -33,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Print output in US industry-standard screenplay format (Courier 12pt, US Letter, standard margins and element indents) including a formatted title page.
 - Dark, writer-focused UI with a light "page" for the script; responsive down to phone widths.
 
-[Unreleased]: https://github.com/ebbanflo/Screenr/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/ebbanflo/Screenr/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/ebbanflo/Screenr/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/ebbanflo/Screenr/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/ebbanflo/Screenr/releases/tag/v1.0.0

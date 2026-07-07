@@ -862,19 +862,25 @@ function renderTransitionBlock(block) {
 function showPopover(anchor, children) {
   const pop = $('#popover');
   pop.replaceChildren(...children);
+  const sheet = window.matchMedia('(max-width: 700px)').matches;
+  pop.classList.toggle('sheet', sheet);
   pop.hidden = false;
-  const r = anchor.getBoundingClientRect();
-  const top = r.bottom + window.scrollY + 4;
-  let left = r.left + window.scrollX;
-  pop.style.top = top + 'px';
-  pop.style.left = left + 'px';
-  // keep on screen
-  requestAnimationFrame(() => {
-    const pr = pop.getBoundingClientRect();
-    if (pr.right > window.innerWidth - 8) {
-      pop.style.left = Math.max(8, window.innerWidth - pr.width - 8) + window.scrollX + 'px';
-    }
-  });
+  if (sheet) {
+    // bottom sheet: positioned purely by CSS
+    pop.style.top = '';
+    pop.style.left = '';
+  } else {
+    const r = anchor.getBoundingClientRect();
+    pop.style.top = r.bottom + window.scrollY + 4 + 'px';
+    pop.style.left = r.left + window.scrollX + 'px';
+    // keep on screen
+    requestAnimationFrame(() => {
+      const pr = pop.getBoundingClientRect();
+      if (pr.right > window.innerWidth - 8) {
+        pop.style.left = Math.max(8, window.innerWidth - pr.width - 8) + window.scrollX + 'px';
+      }
+    });
+  }
   setTimeout(() => document.addEventListener('pointerdown', popoverOutside, { once: false }), 0);
 }
 

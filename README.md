@@ -21,6 +21,7 @@ A structured screenwriting app that runs entirely in your browser. Set up your c
   - **Screenr backup (`.screenr.json`)** — full-fidelity backup; import it on any device to restore.
   - **Fountain (`.fountain`)** — export *and* import the open plain-text screenplay standard, readable by Final Draft, Highland, Fade In, and others. Importing a Fountain script rebuilds your character list, locations, and per-scene casts automatically.
 - **Autosave** — every change is saved to IndexedDB within half a second.
+- **Phone and desktop** — the layout auto-detects your device: on phones the toolbar goes full-width, pickers open as bottom sheets, and tap targets grow; on desktop you get hover tools and anchored menus. Works the same from a pocket or a workstation.
 
 ## Running it
 
